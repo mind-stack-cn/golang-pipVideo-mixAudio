@@ -78,11 +78,11 @@ func main() {
 type requestHandler struct{}
 
 type PostParams struct {
-	AudioUri0   string
-	AudioUri1   string
-	VideoUri0   string
-	VideoUri1   string
-	CallBackUrl string
+	AudioUri0   string	// 待叠加音频0
+	AudioUri1   string	// 待叠加音频1
+	VideoUri0   string	// 待叠加视频0
+	VideoUri1   string	// 待叠加视频1
+	CallBackUrl string	// 回调请求url,POST
 }
 
 type MixedResult struct {
