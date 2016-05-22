@@ -27,22 +27,14 @@ import (
 	"testing"
 	"github.com/mind-stack-cn/golang-pipVideo-mixAudio/mixutil"
 	"github.com/stretchr/testify/assert"
-	"fmt"
 )
 
 func Test_GetMixVideoCommand(t *testing.T)  {
 	var cmd = mixutil.GetMixVideoCommand("1.mp4", "2.mp4", "out.mp4")
-	assert.Equal(t, cmd, "ffmpeg -i 1.mp4 -i 2.mp4 -filter_complex \"[0]scale=iw/5:ih/5 [pip];[1][0]amix=inputs=2:duration=longest; [1][pip] overlay=main_w-overlay_w-10:main_h-overlay_h-10\" -strict -2 out.mp4")
-}
-
-func Test_MixVideoImp(t *testing.T)  {
-	err := mixutil.MixVideosImp("./testmedia/1.mp4", "./testmedia/2.mp4", "out.mp4")
-	assert.Nil(t, err)
+	assert.Equal(t, cmd, "ffmpeg -i 1.mp4 -i 2.mp4 -filter_complex \"[0]scale=iw/5:ih/5 [pip];[1][0]amix=inputs=2:duration=longest; [1][pip] overlay=main_w-overlay_w-10:main_h-overlay_h-10\" -strict -2 -y out.mp4")
 }
 
 func Test_MixVideos(t *testing.T)  {
-	thumbNail, duraion, err := mixutil.MixVideos("./testmedia/1.mp4", "./testmedia/2.mp4", "out.mp4")
-	fmt.Println(thumbNail)
-	fmt.Println(duraion)
+	err := mixutil.MixVideos("./testmedia/1.mp4", "./testmedia/2.mp4", "out.mp4")
 	assert.Nil(t, err)
 }

@@ -26,39 +26,23 @@ package mixutil
 import (
 	"os/exec"
 	"fmt"
-	"github.com/mind-stack-cn/golang-fileserver/model"
 )
-
-// Mix Audios
-func MixAudios(inputAudioFilePaths []string, outAudioFilePath string) (float64, error){
-	if inputAudioFilePaths == nil || len(inputAudioFilePaths) <= 1 || outAudioFilePath == "" {
-		return 0, fmt.Errorf("invalidate params")
-	}
-
-	// Mix audio
-	err := MixAudiosImp(inputAudioFilePaths, outAudioFilePath)
-	if err != nil {
-		return 0, err
-	}
-
-	// Get File Duration
-	duration, err := model.GetMediaDuration(outAudioFilePath)
-	if err != nil {
-		return 0, err
-	}
-	return duration, nil
-}
 
 // Use Command Line "ffmpeg" to Mix Audio
 // ffmpeg -i [input0] -i [input1] -filter_complex "[1][0]amix=inputs=2:duration=longest;" -strict -2 [output]
-func MixAudiosImp(inputAudioFilePaths []string, outAudioFilePath string) error {
-	ffmpegcmd:= GetMixAudioCommand(inputAudioFilePaths, outAudioFilePath)
+func MixAudios(inputAudioFilePaths []string, outAudioFilePath string) error {
+	// param validate
+	if inputAudioFilePaths == nil || len(inputAudioFilePaths) <= 1 || outAudioFilePath == "" {
+		return fmt.Errorf("invalidate params")
+	}
+
+	ffmpegcmd := GetMixAudioCommand(inputAudioFilePaths, outAudioFilePath)
 	fmt.Println(ffmpegcmd)
-	_, err:= exec.Command("sh", "-c", ffmpegcmd).Output()
+	_, err := exec.Command("sh", "-c", ffmpegcmd).Output()
 	return err
 }
 
-func GetMixAudioCommand(inputAudioFilePaths []string, outAudioFilePath string) string{
+func GetMixAudioCommand(inputAudioFilePaths []string, outAudioFilePath string) string {
 	filePathInput := ""
 	mixInputs := ""
 	for i := 0; i < len(inputAudioFilePaths); i++ {

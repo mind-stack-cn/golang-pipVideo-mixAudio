@@ -26,45 +26,17 @@ package mixutil
 import (
 	"os/exec"
 	"fmt"
-	"github.com/mind-stack-cn/golang-fileserver/model"
-	"path"
-	"strings"
 )
-
-const thumbExt = ".jpg"
-
-// Mix Two Video
-func MixVideos(inputAudioFilePath1 string, inputAudioFilePath2 string, outAudioFilePath string) (string, float64, error){
-	if inputAudioFilePath1== "" || inputAudioFilePath2 == "" ||  outAudioFilePath == "" {
-		return "", 0, fmt.Errorf("invalidate params")
-	}
-
-	// Mix audio
-	err := MixVideosImp(inputAudioFilePath1, inputAudioFilePath2, outAudioFilePath)
-	if err != nil {
-		return "", 0, err
-	}
-
-	// Get File Duration
-	duration, err := model.GetMediaDuration(outAudioFilePath)
-	if err != nil {
-		return "", 0, err
-	}
-
-	// Generate Thumbnail
-	// Thumbnail path
-	thumbNailPath := strings.TrimSuffix(outAudioFilePath, path.Ext(outAudioFilePath)) + thumbExt
-	// Generate default thumbnail
-	if err := model.GetVideoThumbnail(outAudioFilePath, thumbNailPath); err == nil {
-		return thumbNailPath, duration, err
-	}else{
-		return "", duration, err
-	}
-}
 
 // Use Command Line "ffmpeg" to Mix Audio
 // ffmpeg -i [input0] -i [input1] -filter_complex "[1][0]amix=inputs=2:duration=longest;" -strict -2 [output]
-func MixVideosImp(inputAudioFilePath1 string, inputAudioFilePath2 string, outAudioFilePath string) error {
+func MixVideos(inputAudioFilePath1 string, inputAudioFilePath2 string, outAudioFilePath string) error{
+	// parameters validate
+	if inputAudioFilePath1== "" || inputAudioFilePath2 == "" ||  outAudioFilePath == "" {
+		return fmt.Errorf("invalidate params")
+	}
+
+	// ffmpeg command
 	ffmpegcmd:= GetMixVideoCommand(inputAudioFilePath1, inputAudioFilePath2, outAudioFilePath)
 	fmt.Println(ffmpegcmd)
 	_, err:= exec.Command("sh", "-c", ffmpegcmd).Output()
