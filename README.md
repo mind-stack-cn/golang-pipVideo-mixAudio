@@ -1,10 +1,10 @@
 # golang-pipVideo-mixAudio
 
 ### build
-docker build -t oceanwu/golang-pipVideo-mixAudio .
+docker build -t oceanwu/golang-pipvideo-mixaudio .
 
 ### Usage
-docker run -d -p 8089:8089 -v $(pwd)/data:/go/src/github.com/mind-stack-cn/golang-pipVideo-mixAudio/data oceanwu/golang-pipVideo-mixAudio
+docker run -d -p 8089:8089 -v $(pwd)/data:/go/src/github.com/mind-stack-cn/golang-pipVideo-mixAudio/data oceanwu/golang-pipvideo-mixaudio 
 
 ## request param
 ````
