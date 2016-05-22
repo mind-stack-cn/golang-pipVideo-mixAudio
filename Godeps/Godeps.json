@@ -1,0 +1,34 @@
+{
+	"ImportPath": "github.com/mind-stack-cn/golang-pipVideo-mixAudio",
+	"GoVersion": "go1.6",
+	"Deps": [
+		{
+			"ImportPath": "github.com/disintegration/imaging",
+			"Rev": "546cb3c5137b3f1232e123a26aa033aade6b3066"
+		},
+		{
+			"ImportPath": "github.com/mind-stack-cn/golang-fileserver/handle",
+			"Rev": "e1348f7eaaa63db016756021404f04c6950c2f97"
+		},
+		{
+			"ImportPath": "github.com/mind-stack-cn/golang-fileserver/model",
+			"Rev": "e1348f7eaaa63db016756021404f04c6950c2f97"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Rev": "d41af8bb6a7704f00bc3b7cba9355ae6a5a80048"
+		},
+		{
+			"ImportPath": "github.com/streamrail/concurrent-map",
+			"Rev": "1ce4642e5a162df67825d273a86b87e6cc8a076b"
+		},
+		{
+			"ImportPath": "golang.org/x/image/bmp",
+			"Rev": "baddd3465a05d84a6d8d3507547a91cb188c81ea"
+		},
+		{
+			"ImportPath": "golang.org/x/image/tiff",
+			"Rev": "baddd3465a05d84a6d8d3507547a91cb188c81ea"
+		}
+	]
+}
