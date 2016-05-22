@@ -44,7 +44,9 @@ import (
 
 var (
 	dir string
-	wg sync.WaitGroup
+	wgMix sync.WaitGroup
+	wgDownloadAudio sync.WaitGroup
+	wgDownloadVideo sync.WaitGroup
 )
 
 func init() {
@@ -106,62 +108,46 @@ func (*requestHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "BadRequest, audio or video param error", http.StatusBadRequest)
 		return
 	}
-
-	log.Printf("audio0: %s, audio1: %s, video0: %s, video1: %s, callback: %s",
-		params.AudioUri0, params.AudioUri1, params.VideoUri0, params.VideoUri1, params.CallBackUrl)
 	go DownloadFilesAndMix(!noAudioMix, !noVideoMix, params)
 
 	io.WriteString(w, "Golang pipVideo mixAudio Server, working...")
 }
 
 
-func DownloadFilesAndMix(forAudio bool, forVide bool, postParams PostParams) {
-	var mixedResult MixedResult
-	if forAudio {
-		audioFilePath0, audioFilePath1, err := DownloadFiles(postParams.AudioUri0, postParams.AudioUri1)
-		if err != nil {
-			InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("download audio file error %s", err.Error()))
-			return
-		}
+func DownloadFilesAndMix(forAudio bool, forVideo bool, postParams PostParams) {
+	var mixedResult MixedResult = MixedResult{}
 
-		absoluteFilePath, relatedFilePath, err := handle.GenerateNewFilePath(dir, filepath.Ext(audioFilePath0))
-		if err != nil {
-			InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("generate audio file error %s", err.Error()))
-			return
-		}
-
-		mixErr := mixutil.MixAudios([]string{audioFilePath0, audioFilePath1}, absoluteFilePath)
-		if mixErr != nil {
-			InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("Mix audio file error %s", mixErr.Error()))
-			return
-		}
-
-		mixedAudioFileInfo := model.ResFileFromFileName(absoluteFilePath, relatedFilePath, model.FileTypeAudio)
-		mixedResult.MixedAudio = mixedAudioFileInfo
+	if (forAudio) {
+		wgMix.Add(1)
+		go func() {
+			defer wgMix.Done()
+			mixedAudio, err := DownloadAudioFilesAndMix(postParams)
+			if err != nil {
+				InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("Mix audio error %s", err.Error()))
+			} else {
+				mixedResult.MixedAudio = mixedAudio
+			}
+		}()
 	}
 
-	if forVide {
-		videoFilePath0, videoFilePath1, err := DownloadFiles(postParams.VideoUri0, postParams.VideoUri1)
-		if err != nil {
-			InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("download video file error %s", err.Error()))
-			return
+	if (forVideo) {
+		wgMix.Add(1)
+		go func() {
+			defer wgMix.Done()
+			mixedVideo, err := DownloadVideoFilesAndMix(postParams)
+			if err != nil {
+				InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("Mix video error %s", err.Error()))
+			} else {
+				mixedResult.MixedVideo = mixedVideo
+			}
+		}()
+	}
 
-		}
+	wgMix.Wait()
 
-		absoluteFilePath, relatedFilePath, err := handle.GenerateNewFilePath(dir, filepath.Ext(videoFilePath0))
-		if err != nil {
-			InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("generate video file error %s", err.Error()))
-			return
-		}
-
-		mixErr := mixutil.MixVideos(videoFilePath0, videoFilePath1, absoluteFilePath)
-		if mixErr != nil {
-			InvokeCallBack(postParams.CallBackUrl, fmt.Sprintf("Mix video file error %s", mixErr.Error()))
-			return
-		}
-
-		mixedVideoFileInfo := model.ResFileFromFileName(absoluteFilePath, relatedFilePath, model.FileTypeVideo)
-		mixedResult.MixedVideo = mixedVideoFileInfo
+	if mixedResult.MixedAudio == nil && mixedResult.MixedVideo == nil {
+		// error hannpened
+		return
 	}
 
 	json, err := json.Marshal(mixedResult)
@@ -173,7 +159,50 @@ func DownloadFilesAndMix(forAudio bool, forVide bool, postParams PostParams) {
 	InvokeCallBack(postParams.CallBackUrl, string(json))
 }
 
-func DownloadFiles(fileUris0 string, fileUris1 string) (string, string, error) {
+func DownloadAudioFilesAndMix(postParams PostParams) (interface{}, error) {
+	fmt.Println(fmt.Sprintf("DownloadAudioFilesAndMix \n%s \n%s", postParams.AudioUri0, postParams.AudioUri1))
+	audioFilePath0, audioFilePath1, err := DownloadFiles(postParams.AudioUri0, postParams.AudioUri1, wgDownloadAudio)
+	if err != nil {
+		return nil, err
+	}
+
+	absoluteFilePath, relatedFilePath, err := handle.GenerateNewFilePath(dir, filepath.Ext(audioFilePath0))
+	if err != nil {
+		return nil, err
+	}
+
+	mixErr := mixutil.MixAudios([]string{audioFilePath0, audioFilePath1}, absoluteFilePath)
+	if mixErr != nil {
+		return nil, err
+	}
+
+	mixedAudioFileInfo := model.ResFileFromFileName(absoluteFilePath, relatedFilePath, model.FileTypeAudio)
+	return mixedAudioFileInfo, nil
+}
+
+func DownloadVideoFilesAndMix(postParams PostParams) (interface{}, error){
+	fmt.Println(fmt.Sprintf("DownloadVideoFilesAndMix \n%s \n%s", postParams.VideoUri1, postParams.VideoUri1))
+	videoFilePath0, videoFilePath1, err := DownloadFiles(postParams.VideoUri0, postParams.VideoUri1, wgDownloadVideo)
+	if err != nil {
+		return nil, err
+
+	}
+
+	absoluteFilePath, relatedFilePath, err := handle.GenerateNewFilePath(dir, filepath.Ext(videoFilePath0))
+	if err != nil {
+		return nil, err
+	}
+
+	mixErr := mixutil.MixVideos(videoFilePath0, videoFilePath1, absoluteFilePath)
+	if mixErr != nil {
+		return nil, err
+	}
+
+	mixedVideoFileInfo := model.ResFileFromFileName(absoluteFilePath, relatedFilePath, model.FileTypeVideo)
+	return mixedVideoFileInfo, nil
+}
+
+func DownloadFiles(fileUris0 string, fileUris1 string, wg sync.WaitGroup) (string, string, error) {
 	var filesUriFilePathMap = cmap.New()
 	var filesUriErrorMap  = cmap.New()
 
