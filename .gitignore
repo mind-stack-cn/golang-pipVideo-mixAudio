@@ -86,7 +86,5 @@ kanPingserver
 /data
 /data/*
 
-golang-fileserver
-
 /test/out.*
 golang-pipVideo-mixAudio
